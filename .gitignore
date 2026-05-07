@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+.env
+.vscode/
+.idea/
+*.log
+/tmp/nyaya_uploads
+.DS_Store
+uv.lock
+
+# Uploaded PDF documents
+uploads/
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/.next/
+
+# Docker volumes
+postgres_data/
+
+# OS files
+Thumbs.db

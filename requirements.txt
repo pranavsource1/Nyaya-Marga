@@ -1,0 +1,55 @@
+    # Core Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[bcrypt]
+python-jose[cryptography]
+bcrypt
+
+# Database
+sqlalchemy[asyncio]
+asyncpg
+psycopg2-binary
+
+# Async/Concurrency
+celery[redis]
+redis<5.0.0
+
+# NLP & Machine Learning
+spacy
+numpy
+
+# LLM & RAG (NVIDIA NIM API + offline embedding)
+langchain
+langchain-community
+langchain-core
+langchain-huggingface
+groq
+faiss-cpu
+sentence-transformers
+
+# PDF Processing
+pymupdf
+pdf2image
+pytesseract
+Pillow
+
+# Configuration
+pydantic
+pydantic-settings
+python-dotenv
+
+# Logging & Monitoring
+python-json-logger
+
+# Development & Type Checking
+pytest
+pytest-asyncio
+
+# Utilities
+httpx
+requests
+

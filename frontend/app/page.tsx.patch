@@ -1,0 +1,162 @@
+--- frontend/app/page.tsx
++++ frontend/app/page.tsx
+@@ -2,7 +2,7 @@
+ 
+-import React, { useState } from 'react';
++import React, { useState, useEffect } from 'react';
++import axios from 'axios';
++import Link from 'next/link';
+ import {
+   LayoutDashboard,
+   Files,
+@@ -23,10 +23,11 @@
+ type DeadlineColor = 'red' | 'orange' | 'green' | 'blue';
+ 
+ interface CaseRow {
++  id?: string;
+   caseNumber: string;
+   subject: string;
+   court: string;
+   department: string;
+   deadlineDays: number;
+   overrideText?: string;
+   overrideColor?: DeadlineColor;
+ }
+@@ -107,7 +108,30 @@
+ 
+ export default function Dashboard() {
+   const [activeTab, setActiveTab] = useState('all');
++  const [cases, setCases] = useState<CaseRow[]>([]);
++  const [isLoading, setIsLoading] = useState(true);
++
++  useEffect(() => {
++    const fetchCases = async () => {
++      try {
++        // Fetch from the backend we just built
++        const res = await axios.get('http://localhost:8000/api/v1/dashboard/cases');
++        const backendCases = res.data.map((c: any) => ({
++          id: c.id,
++          caseNumber: c.case_number,
++          subject: c.subject || 'Unknown Subject',
++          court: c.court_name || 'Karnataka High Court',
++          department: c.department || 'General',
++          deadlineDays: c.nearest_deadline ? Math.ceil((new Date(c.nearest_deadline).getTime() - new Date().getTime()) / (1000 * 3600 * 24)) : 0
++        }));
++        setCases(backendCases.length > 0 ? backendCases : []);
++      } catch (error) {
++        console.error('Failed to fetch cases:', error);
++      } finally {
++        setIsLoading(false);
++      }
++    };
++    fetchCases();
++  }, []);
+ 
+   return (
+     <div className="flex h-screen overflow-hidden bg-slate-50 font-sans text-slate-900">
+@@ -141,31 +165,31 @@
+           <div>
+             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Main</h4>
+             <nav className="space-y-1">
+-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 bg-blue-500/10 text-blue-400 rounded-lg transition-colors">
++              <Link href="/" className="w-full flex items-center space-x-3 px-3 py-2.5 bg-blue-500/10 text-blue-400 rounded-lg transition-colors">
+                 <LayoutDashboard className="w-5 h-5" />
+                 <span className="font-medium text-sm">Dashboard</span>
+-              </button>
+-              <button className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++              </Link>
++              <Link href="/cases" className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <div className="flex items-center space-x-3">
+                   <Files className="w-5 h-5 text-slate-400" />
+                   <span className="font-medium text-sm">All Cases</span>
+                 </div>
+-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">47</span>
+-              </button>
+-              <button className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{cases.length}</span>
++              </Link>
++              <Link href="/verify" className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <div className="flex items-center space-x-3">
+                   <CheckCircle className="w-5 h-5 text-slate-400" />
+                   <span className="font-medium text-sm">Verification Queue</span>
+                 </div>
+                 <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">8</span>
+-              </button>
+-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++              </Link>
++              <Link href="/upload" className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <Upload className="w-5 h-5 text-slate-400" />
+                 <span className="font-medium text-sm">Upload Judgment</span>
+-              </button>
+-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++              </Link>
++              <Link href="/search" className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <Search className="w-5 h-5 text-slate-400" />
+                 <span className="font-medium text-sm">Precedent Search</span>
+-              </button>
++              </Link>
+             </nav>
+           </div>
+ 
+@@ -173,15 +197,15 @@
+             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-3">Admin</h4>
+             <nav className="space-y-1">
+-              <button className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++              <Link href="/audit" className="w-full flex items-center space-x-3 px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <FileText className="w-5 h-5 text-slate-400" />
+                 <span className="font-medium text-sm">Audit Log</span>
+-              </button>
+-              <button className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
++              </Link>
++              <Link href="/users" className="w-full flex items-center justify-between px-3 py-2.5 text-slate-300 hover:bg-slate-900 rounded-lg transition-colors">
+                 <div className="flex items-center space-x-3">
+                   <Users className="w-5 h-5 text-slate-400" />
+                   <span className="font-medium text-sm">Users & Roles</span>
+                 </div>
+                 <span className="bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+-              </button>
++              </Link>
+             </nav>
+           </div>
+@@ -236,10 +260,10 @@
+                 </button>
+-                <button className="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium text-sm shadow-sm hover:bg-slate-50 transition-colors">
++                <Link href="/verify" className="flex items-center space-x-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium text-sm shadow-sm hover:bg-slate-50 transition-colors">
+                   <CheckCircle className="w-4 h-4 text-slate-400" />
+                   <span>Verify Queue (8)</span>
+-                </button>
++                </Link>
+               </div>
+             </div>
+ 
+@@ -291,7 +315,7 @@
+                 <div className="flex flex-wrap items-center gap-2">
+                   {[
+-                    { id: 'all', label: 'All (47)' },
++                    { id: 'all', label: `All (${cases.length})` },
+                     { id: 'overdue', label: 'Overdue (3)' },
+                     { id: 'critical', label: 'Critical (11)' },
+                     { id: 'upcoming', label: 'Upcoming (18)' },
+@@ -328,15 +352,21 @@
+                   </thead>
+                   <tbody className="divide-y divide-slate-100">
+-                    {DUMMY_CASES.map((row, idx) => {
++                    {isLoading ? (
++                      <tr>
++                        <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
++                          Loading verified cases...
++                        </td>
++                      </tr>
++                    ) : cases.length === 0 ? (
++                      <tr>
++                        <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
++                          No verified cases found.
++                        </td>
++                      </tr>
++                    ) : cases.map((row, idx) => {
+                       const color = row.overrideColor || getDeadlineColor(row.deadlineDays);
+                       const badgeText = row.overrideText || `${row.deadlineDays}d`;
+                       
+                       return (
+                         <tr key={idx} className="hover:bg-slate-50/80 transition-colors group">
+                           <td className="px-6 py-4">

@@ -1,0 +1,164 @@
+NYAYA MARGA - COMPLETE ARCHITECTURE DIAGRAM
+============================================
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          🎨 FRONTEND (Next.js)                              │
+│                         http://localhost:3000                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────┐           ┌──────────────────┐                        │
+│  │  Upload Form    │           │  Phase 2 Results │                        │
+│  │  ─────────────  │           │  ──────────────  │                        │
+│  │  • Case Number  │──────────>│  • Entity Table  │                        │
+│  │  • PDF File     │           │  • ID, Type,     │                        │
+│  │                 │           │    Text, Score   │                        │
+│  └─────────────────┘           └────────┬─────────┘                        │
+│                                         │                                   │
+│                                         v                                   │
+│                            ┌────────────────────────┐                      │
+│                            │ Generate Action Plan   │                      │
+│                            │ (Manual Trigger)       │                      │
+│                            └────────────┬───────────┘                      │
+│                                         │                                   │
+│                                         v                                   │
+│                            ┌────────────────────────┐                      │
+│                            │  Phase 3 Results       │                      │
+│                            │  ──────────────────    │                      │
+│                            │  • Compliance          │                      │
+│                            │  • Financial (₹)       │                      │
+│                            │  • Timeline            │                      │
+│                            │  • Action Directives   │                      │
+│                            └────────────────────────┘                      │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │ HTTP
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    🔧 BACKEND APIs (FastAPI)                                │
+│                    http://localhost:8000                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  POST /api/v1/cases/upload              Create case + dispatch Phase 2      │
+│  GET  /api/v1/cases/{id}/status         Get entities + status               │
+│  POST /api/v1/cases/{id}/generate-action-plan    Trigger Phase 3            │
+│  GET  /api/v1/cases/{id}/action-plan             Get generated plan         │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │
+                ┌───────────────────┼───────────────────┐
+                │                   │                   │
+                ▼                   ▼                   ▼
+        ┌───────────────┐   ┌───────────────┐ ┌───────────────┐
+        │   Celery      │   │  PostgreSQL   │ │    Redis      │
+        │   Worker      │   │   (Async)     │ │   (Cache)     │
+        └───────────────┘   └───────────────┘ └───────────────┘
+                │
+    ┌───────────┴───────────┐
+    │                       │
+    ▼                       ▼
+┌────────────────┐   ┌────────────────┐
+│  PHASE 2 SRV   │   │  PHASE 3 SRV   │
+├────────────────┤   ├────────────────┤
+│ • PDFService   │   │ • RAGService   │
+│ • NLPService   │   │ • LLMService   │
+│                │   │                │
+│ ─────────────  │   │ ───────────────│
+│ PyMuPDF        │   │ LangChain      │
+│ Tesseract      │   │ FAISS Vector   │
+│ InLegalBERT    │   │ Store          │
+│                │   │ Ollama (Llama) │
+└────────────────┘   └────────────────┘
+        │                    │
+        ▼                    ▼
+    ┌────────────────┐ ┌────────────────┐
+    │  PDF Files    │ │ Ollama Model   │
+    │ /tmp/uploads/ │ │ llama3.1:8b    │
+    │               │ │ (8GB, local)   │
+    └────────────────┘ └────────────────┘
+
+
+PROCESSING PIPELINE
+==================
+
+PHASE 2: Entity Extraction (15-90 seconds)
+──────────────────────────────────────────
+
+User uploads PDF
+     │
+     ├─> PDFService extracts text + bounding boxes (PyMuPDF)
+     │
+     ├─> NLPService processes with InLegalBERT (sliding window)
+     │   • 400 token chunks, 50 token overlap
+     │   • Confidence scoring
+     │
+     └─> Bulk insert entities into database
+         • ID, type, text, confidence, bbox, requires_review
+
+Frontend polls every 2 seconds
+     │
+     └─> Displays entity table when ready
+
+
+PHASE 3: Action Plan Generation (20-130 seconds)
+────────────────────────────────────────────────
+
+User clicks "Generate Action Plan"
+     │
+     ├─> Backend dispatches Celery task
+     │
+     ├─> FAISSRetrieverService retrieves 3 similar precedents
+     │   • Uses all-MiniLM-L6-v2 embeddings
+     │   • In-memory FAISS search
+     │
+     ├─> ActionPlanGenerator synthesizes context:
+     │   • Entity summary (top 5 per type)
+     │   • Historical precedents
+     │
+     ├─> Invokes Ollama (Llama 3.1 8B):
+     │   • System prompt: Expert Indian legal strategist
+     │   • Format: JSON output only
+     │   • PydanticOutputParser ensures schema compliance
+     │
+     ├─> Stores result in Case.generated_action_plan (JSONB)
+     │   • ComplianceAssessment
+     │   • LitigationROI (with ₹ costs)
+     │   • StatutoryTimeline
+     │   • ActionDirectives (1-20 tasks)
+     │
+     └─> Frontend polls and displays action plan
+         • 4 tabbed sections
+         • Color-coded urgency
+         • Financial analysis in INR
+
+
+DOCKER ORCHESTRATION
+====================
+
+docker-compose.yml coordinates:
+
+┌──────────────────────────────────────────────────────────────┐
+│  postgres:16         Database (single source of truth)       │
+│  redis:7             Cache + Celery broker                   │
+│  ollama/ollama       Llama 3.1 8B inference engine           │
+│  backend (FastAPI)   Main service orchestration              │
+│  celery_worker       Async task processor (Phase 2 + 3)      │
+│  frontend (Next.js)  User interface                          │
+└──────────────────────────────────────────────────────────────┘
+
+All services connected via internal network
+Health checks ensure readiness before dependent services start
+
+
+TECHNOLOGY STACK
+================
+
+Frontend:          Next.js 15 + React 19 + TypeScript + Tailwind CSS
+Backend:           FastAPI 0.109 + SQLAlchemy 2.0 async
+Database:          PostgreSQL 16
+Cache/Queue:       Redis 7 + Celery 5.3
+Phase 2 NLP:       PyMuPDF + pytesseract + law-ai/InLegalBERT
+Phase 3 LLM:       LangChain + Ollama (Llama 3.1 8B) + FAISS
+Embeddings:        sentence-transformers/all-MiniLM-L6-v2
+DevOps:            Docker + Docker Compose

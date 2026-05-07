@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base Resets ─── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+/* ─── react-pdf text layer fix ─── */
+.react-pdf__Page__textContent {
+  @apply select-text;
+}
+
+.react-pdf__Page__textContent span {
+  @apply opacity-20;
+}
+
+/* ─── Focus visible for keyboard nav (WCAG) ─── */
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-gov-600;
+}
+
+/* ─── Scrollbar refinement ─── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}

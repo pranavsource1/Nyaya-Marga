@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
     # CORS middleware for Phase 4 Next.js frontend
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:8000", "http://localhost:8080"],
+        allow_origins=["*"], # Allow all origins for Vercel/HF integration
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

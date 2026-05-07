@@ -12,10 +12,22 @@ from .config import settings
 
 logger = logging.getLogger(__name__)
 
+import ssl
+
+# Check if we're connecting to Supabase which requires SSL
+connect_args = {}
+if "supabase.co" in settings.database_url:
+    # Supabase requires SSL, but sometimes asyncpg needs explicit SSL context or "require"
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+    connect_args["ssl"] = ssl_context
+
 engine = create_async_engine(
     settings.database_url,
     echo=settings.database_echo,
     poolclass=NullPool,  # Recommended for async connections
+    connect_args=connect_args,
     future=True,
 )
 

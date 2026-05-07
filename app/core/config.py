@@ -56,6 +56,13 @@ class Settings(BaseSettings):
         super().__init__(**kwargs)
         # Ensure upload directory exists
         os.makedirs(self.upload_base_path, exist_ok=True)
+        
+        # Automatically fix standard PostgreSQL URLs to use the asyncpg driver
+        if self.database_url:
+            if self.database_url.startswith("postgresql://"):
+                self.database_url = self.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            elif self.database_url.startswith("postgres://"):
+                self.database_url = self.database_url.replace("postgres://", "postgresql+asyncpg://", 1)
 
 
 settings = Settings()

@@ -13,15 +13,25 @@ from .config import settings
 logger = logging.getLogger(__name__)
 
 import ssl
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 # Convert standard postgres URLs to asyncpg to prevent 'psycopg2 is not async' errors
 db_url = settings.database_url
-if db_url and db_url.startswith("postgresql://"):
-    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-elif db_url and db_url.startswith("postgres://"):
-    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+if db_url:
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+        
+    # Strip incompatible parameters like 'pgbouncer' from the URL
+    parsed = urlparse(db_url)
+    qs = dict(parse_qsl(parsed.query))
+    qs.pop('pgbouncer', None)
+    qs.pop('sslmode', None) # We handle SSL explicitly below
+    parsed = parsed._replace(query=urlencode(qs))
+    db_url = urlunparse(parsed)
 
-# Check if we're connecting to Supabase which requires SSL
+# Check if we're connecting to Supabase which requires SSL and special PgBouncer settings
 connect_args = {}
 if db_url and "supabase.co" in db_url:
     # Supabase requires SSL, but sometimes asyncpg needs explicit SSL context or "require"
@@ -29,6 +39,10 @@ if db_url and "supabase.co" in db_url:
     ssl_context.check_hostname = False
     ssl_context.verify_mode = ssl.CERT_NONE
     connect_args["ssl"] = ssl_context
+    
+    # Supabase uses PgBouncer in transaction mode, which breaks asyncpg's prepared statements
+    connect_args["statement_cache_size"] = 0
+    connect_args["prepared_statement_cache_size"] = 0
 
 engine = create_async_engine(
     db_url,

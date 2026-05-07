@@ -5,13 +5,11 @@ import { useDropzone } from 'react-dropzone';
 import {
   Upload,
   FileText,
-  Activity,
   AlertCircle,
   CheckCircle,
   Loader2,
 } from 'lucide-react';
 import { api, handleApiError } from '@/lib/api';
-import { useQuery } from '@tanstack/react-query';
 
 export default function IntakeWorkspace() {
   const [caseNumber, setCaseNumber] = useState('');
@@ -57,12 +55,6 @@ export default function IntakeWorkspace() {
       setIsUploading(false);
     }
   };
-
-  const { data: health } = useQuery({
-    queryKey: ['health'],
-    queryFn: () => api.healthCheck(),
-    refetchInterval: 10000,
-  });
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -165,31 +157,6 @@ export default function IntakeWorkspace() {
               )}
             </button>
           </form>
-        </div>
-
-        {/* System Health */}
-        <div>
-          <div className="bg-white rounded-lg border border-slate-200 p-5">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Activity className="w-4 h-4 text-ka-gold-500" />
-              Backend Health
-            </h3>
-            <div className="space-y-3">
-              {[
-                { label: 'Core API', status: health?.status === 'healthy' },
-                { label: 'PostgreSQL', status: health?.database === 'connected' },
-                { label: 'Redis / Celery', status: health?.celery === 'connected' },
-              ].map((service) => (
-                <div key={service.label} className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600 font-medium">{service.label}</span>
-                  <span className={`flex items-center gap-1.5 text-xs font-bold ${service.status ? 'text-ka-green-700' : 'text-ka-crimson-600'}`}>
-                    <span className={`w-2 h-2 rounded-full ${service.status ? 'bg-ka-green-500' : 'bg-ka-crimson-500'} animate-pulse`} />
-                    {service.status ? 'ONLINE' : 'OFFLINE'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

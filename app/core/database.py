@@ -14,9 +14,16 @@ logger = logging.getLogger(__name__)
 
 import ssl
 
+# Convert standard postgres URLs to asyncpg to prevent 'psycopg2 is not async' errors
+db_url = settings.database_url
+if db_url and db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif db_url and db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+
 # Check if we're connecting to Supabase which requires SSL
 connect_args = {}
-if "supabase.co" in settings.database_url:
+if db_url and "supabase.co" in db_url:
     # Supabase requires SSL, but sometimes asyncpg needs explicit SSL context or "require"
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = False
@@ -24,7 +31,7 @@ if "supabase.co" in settings.database_url:
     connect_args["ssl"] = ssl_context
 
 engine = create_async_engine(
-    settings.database_url,
+    db_url,
     echo=settings.database_echo,
     poolclass=NullPool,  # Recommended for async connections
     connect_args=connect_args,

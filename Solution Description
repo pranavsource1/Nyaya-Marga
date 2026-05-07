@@ -1,0 +1,35 @@
+OVERVIEW
+Nyaya Marga is an end-to-end, zero-cloud-dependency AI legal intelligence pipeline engineered for the Centre for e-Governance’s Court Case Monitoring System (CCMS). It solves the latency and accuracy challenges of manual judgment processing by automating complex legal extraction, generating data-driven administrative action plans, and enforcing deterministic human-in-the-loop verification before surfacing actionable intelligence on a secure, role-based dashboard.
+CORE PROBLEM FLOW ALIGNMENT & ARCHITECTURE
+1. Intelligent Extraction (Understand the Judgment)
+We process unstructured, multi-page legal PDFs (both digital and scanned) using a robust OCR pipeline (PyMuPDF + Tesseract v5). We leverage Domain-Specific Legal NLP (InLegalBERT) to perform Named Entity Recognition (NER) and semantic classification, accurately extracting:
+
+Case metadata (Bench, Court, Date of Order)
+Petitioner/Respondent entities mapped to government departments
+Verbatim and summarized key directives
+Relevant statutory timelines and explicit deadlines
+
+2. Automated Action Plan Generation (Strategic Differentiator)
+Utilizing localized LLM inference (Llama 3.1 8B via Ollama), Nyaya Marga translates complex legalese into a structured, four-part administrative strategy:
+Compliance vs. Appeal Assessment: Classifies the optimal administrative response with traceable reasoning.
+Litigation ROI Calculator: A data-driven financial analysis tool that evaluates the cost-benefit of compliance vs. extended litigation, directly optimizing government expenditure.
+Timeline Mapping: Computes explicit deadlines and infers statutory limitation periods (Limitation Act, 1963).
+Actionable Directives: Translates operative orders into clear tasks mapped to responsible departments via Semantic Registry Matching.
+
+3. Zero-Trust Human Verification (Mandatory HITL)
+Data integrity is paramount. No extracted data bypasses human oversight.
+Side-by-Side PDF Verification: Extracted fields render adjacent to the source PDF, featuring scroll-synced, deterministic bounding-box highlights for instant validation.
+Confidence Scoring: The NLP model outputs softmax probability scores; extractions below 75% are flagged for mandatory review.
+Secure Workflow: Role-Based Access Control (RBAC via JWT) allows authorized officers to Approve, Edit (with full PostgreSQL audit trails), or Reject extractions.
+
+4. Compliance & Intelligence Dashboard
+A React/Tailwind-powered interface restricted strictly to verified data.
+Features Role-Specific JWT views, urgency triage (color-coded deadline alerts), and a Hybrid Retrieval-Augmented Generation (RAG) search module. By indexing 25 years of historical judgments (vanga dataset) via an AWS Inverted Index and FAISS vector database, officers can instantly retrieve historical precedents to ensure consistent administrative responses.
+
+NATIVE INDIC LOCALIZATION & TRANSLATION
+To democratize access, action plans are seamlessly translated into Kannada, Hindi, Bengali, Marathi, Tamil, and Telugu using the specialized, open-source law-ai/InLegalTrans-En2Indic-1B model, achieving true regional administrative accessibility at zero API cost.
+EVALUATION CRITERIA SATISFIED
+Extraction Accuracy: Multi-stage NLP with deterministic source-linking.
+Plan Quality: Llama 3.1 contextual reasoning + ROI Financial Optimization.
+Verification Effectiveness: Mandatory HITL UI with confidence flagging and RBAC.
+Dashboard Usability: Clean, deadline-driven, verified-only data presentation.

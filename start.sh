@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Start Redis server in the background
-redis-server --daemonize yes
+# Start Redis server in the background with persistence disabled
+# On Hugging Face Spaces, we don't need RDB snapshots and they often fail due to disk/permission limits.
+redis-server --daemonize yes --save "" --appendonly no --stop-writes-on-bgsave-error no
 
 # Wait a moment for Redis to start
 sleep 2
